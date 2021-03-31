@@ -1,0 +1,59 @@
+
+El inheritedWidget es un widget base para poder propagar informacion entre todo el arbol
+de widgets de aplicacion, partiendo desde el widget padre y poder transferir la informacion
+a los widget hijos de forma eficiente.
+
+Por ejemplo , para utilizar inheritedWidget sera necesario implementarlo en el widget principal de MaterialApp ya que
+es el widget padre
+
+Para crear un inheritedWidget tenemos crear una clase que extendera de ese widget, de la cual se encargara de manejar
+las instanceas de clases bloc, las cuales solo se instancearan una sola vez, despues se sobrescribe un metodo 
+updateShouldNotify el cual se especifica sy los widget hijos podran acceder a la data a travez del arbol.
+
+Despues agregamos el constructor para poder inicializarlo como componente padre y agregar el materialApp como hijo
+
+Ademas creamos un metodo que sera el encargado de buscar en el arbol la instancea del provider en base al contexto del arbol
+
+Creamos un archivo dentro de /bloc llamado provider.dart
+
+Asi quedaria la clase del provider
+
+import 'package:flutter/material.dart';
+import 'package:formvalidation/src/bloc/login_bloc.dart';
+
+//De esta forma podemos exportar la clase desde el provider y usarla
+export 'package:formvalidation/src/bloc/login_bloc.dart';
+
+//Con esta clase vamos a poder manejar la informacion en toda mi apliacion
+class Provider extends InheritedTheme{
+
+  final loginBloc = LoginBloc();
+
+  //Este metodo es una condicion para establecer si se tendra que 
+  //Notificar a los hijos si ocurre un cambio
+  @override
+  bool updateShouldNotify(covariant InheritedWidget oldWidget) => true;
+
+//Con la instancea del provider , podremos agregar como parametro el widget hijo
+  Provider( { Key key, Widget child })
+  : super( key: key, child: child );
+  
+  //Para obtner la instancea de un bloc con el estado que tenga la instancea
+  static LoginBloc of ( BuildContext context ){
+    /*
+    Esto lo que hace es buscar en el contexto, el arbol de widgets y va a buscar
+    Esta misma clase del provider y retornara la instancea que del login bloc
+    */
+   return context.dependOnInheritedWidgetOfExactType<Provider>().loginBloc;
+}
+
+    @override
+    Widget wrap(BuildContext context, Widget child) {
+    // TODO: implement wrap
+    throw UnimplementedError();
+  }
+
+  
+
+
+}

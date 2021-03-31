@@ -1,0 +1,93 @@
+Para usar la camara nativa y la seleccion de imagen del dispositivo, instalamos los paquetes
+
+image_picker:
+mime_type: ^0.3.2
+
+Y despues tenemos que hacer unas modificaciones para la app de android, en la carpeta android del proyecto , en app
+en el archivo que dice build.gradle, buscamos defaultConfig y agregamos como version minima minSdkVersion 21
+
+Y para IOS
+Nos vamos a la carpeta ios , despues en la carpeta Runner y encontramos el archivo info.plist, y agregamos
+la documentacion de los permisos necesarios
+
+<key>NSPhotoLibraryUsageDescription</key>
+	<string>Es necesario para seleccionar la imagen</string>
+
+	<key>NSCameraUsageDescription</key>
+	<string>Es necesario para capturar la imagen</string>
+
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Es necesario para capturar el audio</string>
+
+
+
+Ahora en el widget donde vamos a cargar la imagen o tomar la foto, creamos una propiedad en la
+clase de tipo File que se encargara de guardar la foto seleccionada o tomada
+
+File fotoSeleccionada;
+
+Ahora para poder cargar la imagen o tomarla creamos los metodos:
+
+void _seleccionarFoto() async{
+
+   _procesarFoto( ImageSource.gallery );
+
+  }
+
+  void _tomarFoto() {
+
+    _procesarFoto( ImageSource.camera );
+
+  }
+
+  void _procesarFoto( ImageSource origen) async{
+
+
+     final imagen = await ImagePicker().getImage(source: origen );
+
+
+    if( imagen != null ){
+      //Si una imagen fue seleccionada cambia la que tiene cargada
+      fotoSeleccionada = File( imagen.path );
+      
+    }
+    setState(() {});
+    
+    //De esta forma si ya tenia una url de foto, se mostrara la ultima seleccionada
+    
+
+  }
+
+Y para tener un widget encargado de mostrar la foto cargada o mostrar otra si no tiene 
+
+Widget _mostrarFoto(){
+
+//De esta forma prevenimos si se selecciono la imagen y se cancelo el guardar
+  if( fotoSeleccionada != null ){
+    return Image.file(
+      fotoSeleccionada,
+      fit: BoxFit.cover,
+      height: 300.0,
+    );
+  }else{
+
+    if( producto.fotoUrl != null ){
+       return FadeInImage(
+      placeholder: AssetImage('assets/jar-loading.gif'),
+      image: NetworkImage(producto.fotoUrl),
+      height: 300.0,
+      width: double.infinity,
+      fit: BoxFit.cover,
+      );
+
+    }
+    return Image(
+      image: AssetImage('assets/no-image.png'),
+      height: 300.0,
+      fit: BoxFit.cover
+     );
+  }
+
+}
+
+

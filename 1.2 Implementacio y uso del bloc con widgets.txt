@@ -1,0 +1,74 @@
+Para eso nos tenemos que ir al widget padre para poder inicializar como widget padre el widget del provider con el
+InherentWidget, en el main.dart agregamos el widget y englobamos el material app
+
+void main() => runApp(MyApp());
+ 
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    
+    //De esta forma le establecemos al provider el widget padre de la aplicacion
+    //para poder manejar data a traves del arbol de widgets
+    return Provider(
+      child: MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'Material App',
+      initialRoute: 'login',
+      routes: {
+        'login': ( BuildContext context ) => LoginPage(),
+        'home':  ( BuildContext context ) => HomePage()
+      },
+      //De esta forma cambiamos el color por defecto de todos los label text de text fiel
+      theme: ThemeData(
+        primaryColor: Colors.orange
+      ),
+      )
+    );
+     
+  }
+}
+
+
+//Ahora en el widget que vamos a hacer uso del stream del provider, como en el login.dart
+Creamos una constante que guarde la referencia a la instancea del provider, el cual podremos
+acceder y usar las propiedades del provider
+
+//Debe estar en un nivel en el que se pueda utilizar como parametro para otros widgets que lo necesiten
+    final bloc= Provider.of(context);
+
+En esta ocacion se uso en widget
+Widget _crearEmail( LoginBloc bloc ) {
+
+  return StreamBuilder(
+    //De esta forma conectamos el stream del bloc con el widget
+     stream: bloc.emailStream ,
+     
+     builder: (BuildContext context, AsyncSnapshot snapshot){
+      
+       return Container(
+     //De esta forma le damos un margen a los lados del input de texto
+     padding: EdgeInsets.symmetric( horizontal: 20.0),
+
+     child: TextField(
+       keyboardType:  TextInputType.emailAddress,
+       decoration: InputDecoration(
+         icon: Icon( Icons.alternate_email, color: Colors.deepPurple ),
+         labelText: 'Correo electronico',
+         hintText: 'Ejemplo@correo.com',
+
+         //Esta propiedad hace que se vea a un lado el texto nuevo 
+         counterText: snapshot.data
+       ),
+       //Asi emitimos el valor del cambio por el stream del bloc
+       onChanged: bloc.changeEmail,
+     ),
+   );
+
+     },
+   );
+
+
+ }
+
+
+

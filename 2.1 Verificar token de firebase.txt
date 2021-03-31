@@ -1,0 +1,48 @@
+Primero tenemos que establecer las reglas para la base de datos de firebase,
+
+El cual para especificar que solo los usuarios autenticados podran leer y escribir en la BD
+
+{
+  "rules": {
+    ".read": "auth != null", 
+    ".write": "auth != null",
+  }
+}
+
+Ahora en todos los widget o provider que consumamamos el servicio de firebase, sera necesrio mandar
+el token por el url , como en el producto_provider.dart
+
+final _prefs = new PreferenciasUsuario();
+
+
+ Future<bool> crearProducto( ProductoModel producto ) async {
+
+  final url = '$_urlFirebase/productos.json?auth=${ _prefs.token }';
+
+  //Necesitamos enviar el modelo en formato json
+  final resp = await  http.post( url , body: productoModelToJson( producto ) );
+
+  final decodedData = jsonDecode( resp.body );
+  
+  print( decodedData );
+
+  return true;
+
+  }
+
+
+Para cambiar la pagina principal de mi aplicacion dependiendo si hay un token guardado, en el main.dart
+
+Inicializamos la instancea en el build del widget principal
+
+final _prefs = new PreferenciasUsuario();
+
+//Y agregamos la condicion
+
+initialRoute: _prefs.token != '' ? 'home' : 'login',
+      routes: {
+        'login': ( BuildContext context ) => LoginPage(),
+        'home':  ( BuildContext context ) => HomePage(),
+        'producto' : ( BuildContext context ) => ProductoPage(),
+        'registro': ( BuildContext context ) => RegistroPage()
+      },

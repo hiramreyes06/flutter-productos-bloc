@@ -1,0 +1,228 @@
+El widget FormWidget es parecido a un container, con la excepcion de que contiene informacion
+de los elementos internos, para poder hacer validaciones con widgets como TextField.
+Para usar el widget es necesario que se use dentro de un StatefulWidget, ya que al
+hacer las validaciones se actualizara el estado de los TextFormField
+
+Ademas en la clase necesitaremosla instancea de un GlobalKey<FormState>() con el fin de,
+poder apuntar al estado del form, con el fin de actualizar los valores de las propiedades de una clase
+
+import 'dart:convert';
+
+//De json a una instancea de la clase
+ProductoModel productoModelFromJson(String str) => ProductoModel.fromJson(json.decode(str));
+
+//De una instancea de la clase a json
+String productoModelToJson(ProductoModel data) => json.encode(data.toJson());
+
+class ProductoModel {
+  
+    ProductoModel({
+        this.id,
+        this.titulo = '',
+        this.valor = 0.0,
+        this.disponible = true,
+        this.fotoUrl,
+    });
+
+    String id;
+    String titulo;
+    double valor;
+    bool disponible;
+    String fotoUrl;
+
+    factory ProductoModel.fromJson(Map<String, dynamic> json) => ProductoModel(
+        id: json["id"],
+        titulo: json["titulo"],
+        valor: json["valor"].toDouble(),
+        disponible: json["disponible"],
+        fotoUrl: json["fotoUrl"],
+    );
+
+    Map<String, dynamic> toJson() => {
+        "id": id,
+        "titulo": titulo,
+        "valor": valor,
+        "disponible": disponible,
+        "fotoUrl": fotoUrl,
+    };
+}
+
+
+Ademas para las validaciones del formulario , se tendra que hacer un archivo con funciones
+dependiendo de la validacion que se requiera para los textFormfiel, como la validacion
+de la entrada de numeros , en un archivo utils/utlis.dart
+
+bool isNumeric( String valor ){
+
+  if( valor.isEmpty) return false;
+
+  final n = num.tryParse( valor );
+
+  return ( n == null ) ? false : true;
+
+}
+
+
+Ahora el widget que manejara el formulario con el modelo y las validaciones quedara asi:
+
+import 'package:flutter/material.dart';
+import 'package:formvalidation/src/modelos/producto_model.dart';
+
+//Asi apuntamos a las funciones que tenga ese archivo con util
+import 'package:formvalidation/src/utils/utils.dart' as util;
+
+//Cuando trabajamos con formularios y TextFormField
+//es necesario tener un StatefulWidget
+class ProductoPage extends StatefulWidget {
+ 
+
+  @override
+  _ProductoPageState createState() => _ProductoPageState();
+}
+
+class _ProductoPageState extends State<ProductoPage> {
+
+ //De esta forma creamos una referencia para poder apuntar a nuestro formulario
+ //desde otras partes de mi widget
+  final formKey = GlobalKey<FormState>();
+
+  ProductoModel producto = new ProductoModel();
+
+  @override
+  Widget build(BuildContext context) {
+    
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Producto'),
+        actions: <Widget>[
+          IconButton(
+            icon: Icon( Icons.photo_size_select_actual),
+             onPressed: (){}
+             ),
+           IconButton(icon: Icon( Icons.camera_alt),
+            onPressed: (){
+
+            })  
+        ],
+      ),
+
+      body:SingleChildScrollView(
+        child: Container(
+          padding: EdgeInsets.all(15.0),
+          //El widget 
+          child: Form(
+            //De esta forma apuntamos a la propiedad de mi clase 
+            key: formKey,
+            child: Column(
+              children: <Widget>[
+                _crearNombre(),
+                _crearPrecio(),
+                _crearDisponible(),
+                _crearBoton()
+              ],
+            ),
+          ),
+        ),
+      ) ,
+
+
+    );
+    
+  }
+
+  Widget _crearNombre() {
+    //Este widget trabaja de forma independiente como un formulario
+    return TextFormField(
+
+      //De esta forma si la clase tiene valores por defecto los asignamos al textformField
+      initialValue: producto.titulo,
+      textCapitalization: TextCapitalization.sentences,
+      decoration: InputDecoration( 
+        labelText: 'Producto'
+      ),
+      
+      //De esta forma al pasar las validaciones actualizamos el valor de prpiedad de la clase
+      onSaved: (valor) => producto.titulo = valor,
+      //Con esta propiedad podemos validar la informacion
+      //Si se retorna un string sera el error para mostrar
+      //Para pasar la validacion se retorna null
+      validator: (valor){
+
+        if( valor.length < 5){
+          return 'El nombre debe ser mas largo';
+        }else{
+         return null;
+        }
+
+      },
+    );
+
+  }
+
+  Widget _crearPrecio(){
+
+    return TextFormField(
+      //Asi agregamos el valor inicializado de la clase
+      initialValue: producto.valor.toString(),
+      keyboardType: TextInputType.numberWithOptions( decimal: true ),
+      decoration: InputDecoration( 
+        labelText: 'Producto'
+      ),
+
+      onSaved: (valor) => producto.valor = double.parse( valor ),
+
+      validator: (valor){
+
+        if ( util.isNumeric(valor) ){
+          return null;
+        }else{
+          return 'Solo numeros son validos';
+        }
+
+      },
+    );
+
+  }
+
+  Widget _crearDisponible(){
+
+    return SwitchListTile(
+      value: producto.disponible,
+      title: Text('Disponible'),
+      //De esta forma al cambiar el switch, se actualiza el valor en pantalla
+      onChanged: (valor) => setState( () {
+        producto.disponible = valor;
+      }),
+    );
+
+  }
+
+  Widget _crearBoton(){
+
+    return RaisedButton.icon(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20.0)
+      ),
+      label: Text('Guardar'),
+      icon: Icon( Icons.save ),
+      color:  Colors.deepPurple,
+      textColor: Colors.white,
+      onPressed: _submit,
+    );
+
+  }
+
+  void _submit(){
+
+    //De esta forma accedemos al estado del form key
+    if(! formKey.currentState.validate() ) return;
+    
+    //Con esto guardamos los valores del formulario con las propiedades de la clase
+    formKey.currentState.save();
+
+     print('Todo ok'); 
+     print('Valor del titulo ${producto.titulo}');
+     print('Valor del precio ${producto.valor}');
+     print('Valor del precio ${producto.disponible}');
+  }
+}

@@ -1,0 +1,136 @@
+El uso de bloc en los productos, nos ayudara a crear stream que se encargan de emitir
+diferentes tipos de eventos con informacion que nos servira para escuchar los cambios
+en diferentes widgets de mi aplicacion.
+
+Creamos una clase para manejar el bloc, productos_bloc.dart
+
+import 'dart:io';
+
+import 'package:formvalidation/src/providers/productos_provider.dart';
+import 'package:rxdart/rxdart.dart';
+
+import 'package:formvalidation/src/modelos/producto_model.dart';
+
+
+class ProductoBloc{
+
+  final _productosController = new BehaviorSubject<List<ProductoModel>>();
+  final _cargandoController = new BehaviorSubject<bool>();
+
+  final _productosProvider = new ProductosProvider();
+
+  Stream<List<ProductoModel>> get productosStream => _productosController.stream;
+  Stream<bool> get cargando => _cargandoController.stream;
+
+  void cargarProductos() async{
+    final productos = await _productosProvider.cargarProductos();
+  
+    _productosController.sink.add( productos );
+  }
+
+
+  void agregarProducto( ProductoModel producto) async{
+    _cargandoController.sink.add(true);
+    await _productosProvider.crearProducto(producto);
+    _cargandoController.sink.add(false);
+  }
+
+Future<String> subirFoto( File foto) async{
+    _cargandoController.sink.add(true);
+    final fotoUrl = await _productosProvider.subirImagen(foto);
+    _cargandoController.sink.add(false);
+
+    return fotoUrl;
+  }
+
+  void editarProducto( ProductoModel producto) async{
+    _cargandoController.sink.add(true);
+    await _productosProvider.editarProducto(producto);
+    _cargandoController.sink.add(false);
+  }
+
+
+void borrarProducto( String id) async{
+
+    await _productosProvider.eliminarProducto(id);
+
+  }
+
+
+  dispose(){
+    _productosController?.close();
+    _cargandoController?.close();
+  }
+
+}
+
+
+Ahora tenemos que crear la instancea del bloc, dentro de un provider como puede ser un
+InheretWidget, que se encuentra inicializado como widget padre, en el provider.dart
+
+//Agregamos como propiedad la instancea del bloc
+final _productosBloc = ProductosBloc();
+
+
+//agregamos el metodo que va a retornar el bloc 
+
+ //De esta forma tenemos 2 bloc para el provider principal
+  static ProductosBloc productosBloc  ( BuildContext context ){
+   return context.dependOnInheritedWidgetOfExactType<Provider>()._productosBloc;
+}
+
+Para utilizar el bloc en un widget , tenemos que guardar la referencia a la instancea
+que retorna el provider que maneja el bloc
+
+En el widget home, que carga los posteos
+
+ @override
+  Widget build(BuildContext context) {
+
+    final productosBloc = Provider.productosBloc(context);
+
+    productosBloc.cargarProductos();
+
+
+
+    return Scaffold(
+      key: scaffoldKey,
+      appBar: AppBar(
+        title: Text('Home'),
+      ),
+
+      body: _crearListadoStream(productosBloc),
+      floatingActionButton: _crearBoton( context ),
+    );
+  }
+
+
+Widget _crearListadoStream( ProductosBloc productosBloc){
+
+    
+    return StreamBuilder(
+      stream:  productosBloc.productosStream,
+      builder: (BuildContext context, AsyncSnapshot<List<ProductoModel>> snapshot){
+       if( snapshot.hasData ){
+
+          final productos = snapshot.data;
+          print('Que pedo weee $productos', );
+
+          return ListView.builder(
+            itemCount: productos.length,
+            itemBuilder: ( context, i) => _crearItem( context, productosBloc ,productos[i] )
+            );
+
+
+        }else{
+
+          print('data ${snapshot.hasData}');
+          return Center( child: CircularProgressIndicator() );
+        }
+      }
+    );
+
+
+  }
+
+

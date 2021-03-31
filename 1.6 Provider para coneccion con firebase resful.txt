@@ -1,0 +1,89 @@
+Para esto necesitamos crear una clase como provider , para poder centralizar los metodos
+que necesitemos en base el modelo, creamos una clase productos_provider.dart
+
+
+import 'dart:convert';
+
+import 'package:http/http.dart' as http;
+import 'package:formvalidation/src/modelos/producto_model.dart';
+
+class ProductosProvider{
+
+//Establecemos el rul base que se neceitara en todas las acciones
+final String _urlFirebase = 'https://productosflutter-f74ae-default-rtdb.firebaseio.com';
+
+ Future<bool> crearProducto( ProductoModel producto ) async {
+
+  final url = '$_urlFirebase/productos.json';
+
+  //Necesitamos enviar el modelo en formato json
+  final resp = await  http.post( url , body: productoModelToJson( producto ) );
+
+  final decodedData = jsonDecode( resp.body );
+  
+  print( decodedData );
+
+  return true;
+
+  }
+
+  Future<bool> editarProducto( ProductoModel producto ) async {
+
+  final url = '$_urlFirebase/productos/${producto.id}.json';
+
+  //Necesitamos enviar el modelo en formato json
+  final resp = await  http.put( url , body: productoModelToJson( producto ) );
+
+  final decodedData = jsonDecode( resp.body );
+  
+  print( decodedData );
+
+  return true;
+
+  }
+
+
+  Future<List<ProductoModel>> cargarProductos() async {
+
+    final url = '$_urlFirebase/productos.json';
+    final resp = await http.get(url);
+
+    final Map<String,dynamic> decodedData = json.decode( resp.body );
+    final List<ProductoModel>  productos = new List();
+
+    print(decodedData);
+
+    if ( decodedData == null ) return [];
+
+    decodedData.forEach(( id, producto) {
+
+      final prodTemp = ProductoModel.fromJson( producto );
+      prodTemp.id = id;
+
+      productos.add( prodTemp );
+
+    });
+
+    print(productos);
+
+    return productos;
+
+
+  }
+
+  Future<bool> eliminarProducto( String id) async {
+
+
+
+    final url = '$_urlFirebase/productos/$id.json';
+
+    final resp = await http.delete(url);
+
+    print(  resp.body );
+
+    return true;
+
+  }
+
+
+}

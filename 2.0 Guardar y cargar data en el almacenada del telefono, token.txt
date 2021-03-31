@@ -1,0 +1,58 @@
+Primero necesitamos instalar el paquete:
+
+shared_preferences:
+
+
+Ahora necesitamos crear una clase que maneje la instancea del shared_preference con el patron singleton
+para asi poder manejar una unica instancea de la clase, la cual quedaria asi:
+
+import 'package:shared_preferences/shared_preferences.dart';
+
+
+class PreferenciasUsuario {
+
+  static final PreferenciasUsuario _instancia = new PreferenciasUsuario._internal();
+
+  factory PreferenciasUsuario() {
+    return _instancia;
+  }
+
+  PreferenciasUsuario._internal();
+
+  SharedPreferences _prefs;
+
+  initPrefs() async {
+    this._prefs = await SharedPreferences.getInstance();
+  }
+
+  // GET y SET del nombre
+  get token {
+    return _prefs.getString('token') ?? '';
+  }
+
+  set token( String value ) {
+    _prefs.setString('token', value);
+  }
+  
+
+
+}
+
+Ahora para crear la instancea una sola vez, sera necesario ejecutarlo en el widget principal de mi 
+aplicacion, en el main.dart
+
+
+void main() async{
+ //Esto soluciona el problema de inicializar las preferencias del usuario al iniciar la aplicacion
+  WidgetsFlutterBinding.ensureInitialized();
+
+  //Esto bloquea la rotacion de la pantalla del usuario
+  SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+
+ 
+  final prefs = new PreferenciasUsuario();
+  await prefs.initPrefs();
+
+runApp(MyApp());
+
+} 

@@ -1,0 +1,45 @@
+Para esto necesitamos crear un provider, que se encargara de manejar los future para subir la imagen
+cargada, creamos el metodo que prepara el archivo para subirlo a un endpoint
+
+Future<String> subirImagen( File imagen) async{
+
+    final url = Uri.parse('https://api.cloudinary.com/v1_1/hiramreyes06/image/upload?upload_preset=flutterApp');
+
+    final  mimeType = mime( imagen.path ).split('/');
+
+    final imageUploadRequest = http.MultipartRequest(
+      'POST',
+      url
+    );
+
+    final file = await http.MultipartFile.fromPath(
+      'file', 
+     imagen.path,
+     contentType: MediaType( mimeType[0], mimeType[1] )
+    );
+
+    imageUploadRequest.files.add(file);
+
+  final streamRespose = await imageUploadRequest.send();
+
+  final resp = await http.Response.fromStream( streamRespose );
+
+  if( resp.statusCode != 200 && resp.statusCode != 201){
+    print('Algo salio mal ${resp.body}');
+    return null;
+  }
+
+  final respData = json.decode( resp.body );
+  print('Response del cloudinary $respData');
+
+  return respData['secure_url'];
+
+
+  }
+
+
+En el widget que vallamos a utilizar creamos la instancea del provider , y ejecutamos el metodo
+
+if( fotoSeleccionada != null){
+    producto.fotoUrl = await productoProvider.subirImagen( fotoSeleccionada );
+    }
